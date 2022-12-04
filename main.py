@@ -67,6 +67,7 @@ if __name__ == "__main__":
         banks.append(bank)
 
     # ALTERAÇÕES CRIS: Criando contas e inicializando bancos
+    # Os valores aqui são arbitrários, inclusive o número de contas criadas
     for bank in banks:
         for i in range(10):
             balance = randint(10000, 1000000)
@@ -83,12 +84,17 @@ if __name__ == "__main__":
         # Inicializa um TransactionGenerator thread por banco:
         transaction_threads.append(
             TransactionGenerator(_id=i, bank=bank))  # alterado
-        transaction_threads[i].start()
         # Inicializa um PaymentProcessor thread por banco.
         # Sua solução completa deverá funcionar corretamente com múltiplos PaymentProcessor threads para cada banco.
         processing_threads.append(PaymentProcessor(_id=i, bank=bank))
+        processing_threads.append(PaymentProcessor(_id=(i+6), bank=bank))
+        processing_threads.append(PaymentProcessor(_id=(i+12), bank=bank))
+
+    for i in range(len(transaction_threads)):
+        transaction_threads[i].start()
+
+    for i in range(len(processing_threads)):
         processing_threads[i].start()
-        break
 
     # Enquanto o tempo total de simuação não for atingido:
     while t < total_time:

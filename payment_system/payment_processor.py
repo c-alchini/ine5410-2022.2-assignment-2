@@ -12,6 +12,7 @@ from utils.currency import *
 #  * Retirar o valor das reservas internacionais do banco:
 # talvez criar uma função que verifique qual moeda está sendo utilizada
 # e retira a quantia necessaria das reservas dessa moeda
+# * Adicionar mutex nas accounts e fazer os locks aqui em process_transaction()
 
 
 class PaymentProcessor(Thread):
@@ -56,18 +57,21 @@ class PaymentProcessor(Thread):
         # ALTERADO: adicionado condição de parada no while e verificação do tamanho da fila
         operating = True
         while operating:
-            operating = self.bank.operating
             try:
+                # tenta pegar o semáforo dos consumidores
+                self.bank.queue_sem_cons.acquire()
+                # pega um transação da fila
                 transaction = self.bank.transaction_queue_get()
-                if (transaction == None):
-                    # fila vazia: não processa nenhuma transação -> talvez aqui dê pra usar um condition
-                    continue
+                # libera o semáforo dos produtores
+                self.bank.queue_sem_prod.release()
+
                 # LOGGER.info(
                 # f"Transaction_queue do Banco {self.bank._id}: {queue}")
             except Exception as err:
                 LOGGER.error(f"Falha em PaymentProcessor.run(): {err}")
             else:
                 self.process_transaction(transaction)
+            operating = self.bank.operating
 
         LOGGER.info(
             f"O PaymentProcessor {self._id} do banco {self.bank._id} foi finalizado.")
@@ -90,6 +94,17 @@ class PaymentProcessor(Thread):
         time.sleep(3 * time_unit)
 
         # ALTERAÇÕES \/
+
+        # TODO
+        # Pega mutex origem
+        # Tenta pegar mutex destino
+        #   se o mutex destino estiver ocupado, larga a origem e tenta pegar a origem novamente
+        #   segue quando obtiver os dois mutexes
+
+        operating = self.bank.operating
+        # Caso o banco feche
+        if (not operating):
+            return None
 
         # conta de origem
         origin_acc = self.bank.accounts[transaction.origin[1]]
@@ -135,6 +150,9 @@ class PaymentProcessor(Thread):
 
             # deposita na conta de destino
             destination_acc.deposit(final_value)
+
+        # TODO
+        # libera os dois mutexes
 
         transaction.set_status(TransactionStatus.SUCCESSFUL)
         LOGGER.info(

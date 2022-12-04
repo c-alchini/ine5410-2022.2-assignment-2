@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from utils.currency import Currency
 from utils.logger import LOGGER
 
+# TODO
+# Criar atributo mutex em Account
+
 
 @dataclass
 class Account:
@@ -49,8 +52,8 @@ class Account:
 
         pretty_balance = f"{format(round(self.balance/100), ',d')}.{self.balance%100:02d} {self.currency.name}"
         pretty_overdraft_limit = f"{format(round(self.overdraft_limit/100), ',d')}.{self.overdraft_limit%100:02d} {self.currency.name}"
-        LOGGER.info(f"Account::{{ _id={self._id}, _bank_id={self._bank_id}, balance={pretty_balance}, overdraft_limit={pretty_overdraft_limit} }}")
-
+        LOGGER.info(
+            f"Account::{{ _id={self._id}, _bank_id={self._bank_id}, balance={pretty_balance}, overdraft_limit={pretty_overdraft_limit} }}")
 
     def deposit(self, amount: int) -> bool:
         """
@@ -63,7 +66,6 @@ class Account:
         self.balance += amount
         LOGGER.info(f"deposit({amount}) successful!")
         return True
-
 
     def withdraw(self, amount: int) -> bool:
         """

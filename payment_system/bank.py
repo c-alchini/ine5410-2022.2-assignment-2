@@ -1,11 +1,13 @@
 from typing import Tuple
 from queue import Queue
-from threading import Lock
+from threading import Lock, Semaphore
 
 from payment_system.account import Account, CurrencyReserves
 from utils.transaction import Transaction
 from utils.currency import Currency
 from utils.logger import LOGGER
+
+queue_max_size = 5
 
 
 class Bank():
@@ -59,6 +61,8 @@ class Bank():
         self.accounts = []
         self.transaction_queue = Queue()
         self.queue_lock = Lock()
+        self.queue_sem_prod = Semaphore(queue_max_size)
+        self.queue_sem_cons = Semaphore(0)
 
     def open_bank(self) -> None:
         """
@@ -72,6 +76,7 @@ class Bank():
         """
         Esse método seta o atributo 'operating' para False
         """
+        self.queue_sem_prod.release(2)
         print("Encerrando banco", self._id)
         self.operating = False
 
@@ -87,10 +92,8 @@ class Bank():
         """
         Esse método retira e retorna o primeiro elemento da fila de transações
         """
-        transaction = None
         self.queue_lock.acquire()
-        if (self.transaction_queue.qsize() > 0):
-            transaction = self.transaction_queue.get()
+        transaction = self.transaction_queue.get()
         self.queue_lock.release()
         return transaction
 

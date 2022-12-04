@@ -48,16 +48,22 @@ class TransactionGenerator(Thread):
 
         i = 0
         while operating:
+            # tenta pegar o semáforo de produção da fila de transações
+            self.bank.queue_sem_prod.acquire()
             operating = banks[self.bank._id].operating
-            if (i > 5):
-                continue
-            origin = (self.bank._id, randint(0, 9))  # apenas 10 contas
+            if (operating == False):
+                break
+            # Cria nova transação e coloca na fila de transações
+            # (0,9) pois esse foi o número de contas criadas
+            origin = (self.bank._id, randint(0, 9))
             destination_bank = randint(0, 5)
-            destination = (destination_bank, randint(0, 9))  # 10 contas
+            destination = (destination_bank, randint(0, 9))
             amount = randint(100, 1000000)
             new_transaction = Transaction(
                 i, origin, destination, amount, currency=Currency(destination_bank+1))
             banks[self.bank._id].transaction_queue_put(new_transaction)
+            # libera o semáforo para os consumidores
+            self.bank.queue_sem_cons.release()
             i += 1
             time.sleep(0.2 * time_unit)
 
