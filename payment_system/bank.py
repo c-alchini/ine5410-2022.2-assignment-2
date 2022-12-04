@@ -1,5 +1,6 @@
 from typing import Tuple
 from queue import Queue
+from threading import Lock
 
 from payment_system.account import Account, CurrencyReserves
 from utils.transaction import Transaction
@@ -28,6 +29,8 @@ class Bank():
         Lista contendo as contas bancárias dos clientes do banco.
     transaction_queue : Queue[Transaction]
         Fila FIFO contendo as transações bancárias pendentes que ainda serão processadas.
+    queue_lock : Lock()
+        Mutex utilizado para inserção/remoção de elementos da fila de transações
 
     Métodos
     -------
@@ -35,6 +38,10 @@ class Bank():
         Inicia o banco: seta o atributo 'operating' para True
     close_bank() -> None:
         Fecha o banco: seta o atributo 'operating' para False
+    transaction_queue_put() -> Transaction:
+        Insere uma transação na fila de transações
+    transaction_queue_get() -> Transaction:
+        Retira e retorna o primeiro elemento da fila de transações
     new_account(balance: int = 0, overdraft_limit: int = 0) -> None:
         Cria uma nova conta bancária (Account) no banco.
     new_transfer(origin: Tuple[int, int], destination: Tuple[int, int], amount: int, currency: Currency) -> None:
@@ -51,20 +58,41 @@ class Bank():
         self.operating = False
         self.accounts = []
         self.transaction_queue = Queue()
+        self.queue_lock = Lock()
 
-    def open_bank(self):
+    def open_bank(self) -> None:
         """
         Esse método seta o atributo 'operating' para True
         """
         print("Abrindo banco", self._id)
+        # print("lock: ", self.queue_lock.locked())
         self.operating = True
 
-    def close_bank(self):
+    def close_bank(self) -> None:
         """
         Esse método seta o atributo 'operating' para False
         """
         print("Encerrando banco", self._id)
         self.operating = False
+
+    def transaction_queue_put(self, transaction: Transaction) -> None:
+        """
+        Esse método insere uma transição na fila de transações
+        """
+        self.queue_lock.acquire()
+        self.transaction_queue.put(transaction)
+        self.queue_lock.release()
+
+    def transaction_queue_get(self) -> Transaction:
+        """
+        Esse método retira e retorna o primeiro elemento da fila de transações
+        """
+        transaction = None
+        self.queue_lock.acquire()
+        if (self.transaction_queue.qsize() > 0):
+            transaction = self.transaction_queue.get()
+        self.queue_lock.release()
+        return transaction
 
     def new_account(self, balance: int = 0, overdraft_limit: int = 0) -> None:
         """

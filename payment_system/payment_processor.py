@@ -58,9 +58,9 @@ class PaymentProcessor(Thread):
         while operating:
             operating = self.bank.operating
             try:
-                if (queue.qsize() > 0):
-                    transaction = queue.get()
-                else:
+                transaction = self.bank.transaction_queue_get()
+                if (transaction == None):
+                    # fila vazia: não processa nenhuma transação -> talvez aqui dê pra usar um condition
                     continue
                 # LOGGER.info(
                 # f"Transaction_queue do Banco {self.bank._id}: {queue}")
