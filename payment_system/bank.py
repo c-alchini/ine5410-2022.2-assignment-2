@@ -1,4 +1,5 @@
 from typing import Tuple
+from queue import Queue
 
 from payment_system.account import Account, CurrencyReserves
 from utils.transaction import Transaction
@@ -49,7 +50,7 @@ class Bank():
         self.reserves = CurrencyReserves()
         self.operating = False
         self.accounts = []
-        self.transaction_queue = []
+        self.transaction_queue = Queue()
 
     def open_bank(self):
         """
@@ -73,7 +74,7 @@ class Bank():
         # TODO: IMPLEMENTE AS MODIFICAÇÕES, SE NECESSÁRIAS, NESTE MÉTODO!
 
         # Gera _id para a nova Account
-        acc_id = len(self.accounts) + 1
+        acc_id = len(self.accounts)
 
         # Cria instância da classe Account
         acc = Account(_id=acc_id, _bank_id=self._id, currency=self.currency,

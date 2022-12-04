@@ -69,23 +69,26 @@ if __name__ == "__main__":
     # ALTERAÇÕES CRIS: Criando contas e inicializando bancos
     for bank in banks:
         for i in range(10):
-            balance = randint(100, 1000000)
-            overdraft_limit = randint(100, 50000)
+            balance = randint(10000, 1000000)
+            overdraft_limit = randint(10000, 500000)
             bank.new_account(balance, overdraft_limit)
             # print(bank.accounts[i]._id, bank.accounts[i].currency,
             #       bank.accounts[i].balance, bank.accounts[i].overdraft_limit)
         bank.open_bank()
 
-    transactionThreads = []
+    transaction_threads = []
+    processing_threads = []
     # Inicializa gerador de transações e processadores de pagamentos para os Bancos Nacionais:
     for i, bank in enumerate(banks):
         # Inicializa um TransactionGenerator thread por banco:
-        transactionThreads.append(
+        transaction_threads.append(
             TransactionGenerator(_id=i, bank=bank))  # alterado
-        transactionThreads[i].start()
+        transaction_threads[i].start()
         # Inicializa um PaymentProcessor thread por banco.
         # Sua solução completa deverá funcionar corretamente com múltiplos PaymentProcessor threads para cada banco.
-        # PaymentProcessor(_id=i, bank=bank).start()
+        processing_threads.append(PaymentProcessor(_id=i, bank=bank))
+        processing_threads[i].start()
+        break
 
     # Enquanto o tempo total de simuação não for atingido:
     while t < total_time:
@@ -103,12 +106,15 @@ if __name__ == "__main__":
     for bank in banks:
         bank.close_bank()
 
-    for i in range(len(transactionThreads)):
-        # print(transactionThreads[i].name, transactionThreads[i].is_alive())
-        transactionThreads[i].join()
+    for i in range(len(transaction_threads)):
+        # print(transaction_threads[i].name, transaction_threads[i].is_alive())
+        transaction_threads[i].join()
+
+    for i in range(len(processing_threads)):
+        processing_threads[i].join()
 
     # for i in range(len(threads)):
-    #     print(transactionThreads[i].is_alive())
+    #     print(transaction_threads[i].is_alive())
 
     # Termina simulação. Após esse print somente dados devem ser printados no console.
     LOGGER.info(f"A simulação chegou ao fim!\n")
