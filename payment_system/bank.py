@@ -30,23 +30,40 @@ class Bank():
 
     Métodos
     -------
+    open_bank() -> None:
+        Inicia o banco: seta o atributo 'operating' para True
+    close_bank() -> None:
+        Fecha o banco: seta o atributo 'operating' para False
     new_account(balance: int = 0, overdraft_limit: int = 0) -> None:
         Cria uma nova conta bancária (Account) no banco.
     new_transfer(origin: Tuple[int, int], destination: Tuple[int, int], amount: int, currency: Currency) -> None:
         Cria uma nova transação bancária.
     info() -> None:
         Printa informações e estatísticas sobre o funcionamento do banco.
-    
+
     """
 
     def __init__(self, _id: int, currency: Currency):
-        self._id                = _id
-        self.currency           = currency
-        self.reserves           = CurrencyReserves()
-        self.operating          = False
-        self.accounts           = []
-        self.transaction_queue  = []
+        self._id = _id
+        self.currency = currency
+        self.reserves = CurrencyReserves()
+        self.operating = False
+        self.accounts = []
+        self.transaction_queue = []
 
+    def open_bank(self):
+        """
+        Esse método seta o atributo 'operating' para True
+        """
+        print("Abrindo banco", self._id)
+        self.operating = True
+
+    def close_bank(self):
+        """
+        Esse método seta o atributo 'operating' para False
+        """
+        print("Encerrando banco", self._id)
+        self.operating = False
 
     def new_account(self, balance: int = 0, overdraft_limit: int = 0) -> None:
         """
@@ -59,11 +76,11 @@ class Bank():
         acc_id = len(self.accounts) + 1
 
         # Cria instância da classe Account
-        acc = Account(_id=acc_id, _bank_id=self._id, currency=self.currency, balance=balance, overdraft_limit=overdraft_limit)
-  
+        acc = Account(_id=acc_id, _bank_id=self._id, currency=self.currency,
+                      balance=balance, overdraft_limit=overdraft_limit)
+
         # Adiciona a Account criada na lista de contas do banco
         self.accounts.append(acc)
-
 
     def info(self) -> None:
         """

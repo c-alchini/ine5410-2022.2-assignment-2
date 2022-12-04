@@ -31,9 +31,8 @@ class TransactionGenerator(Thread):
 
     def __init__(self, _id: int, bank: Bank):
         Thread.__init__(self)
-        self._id  = _id
+        self._id = _id
         self.bank = bank
-
 
     def run(self):
         """
@@ -42,20 +41,29 @@ class TransactionGenerator(Thread):
         """
         # TODO: IMPLEMENTE AS MODIFICAÇÕES, SE NECESSÁRIAS, NESTE MÉTODO!
 
-        LOGGER.info(f"Inicializado TransactionGenerator para o Banco Nacional {self.bank._id}!")
+        LOGGER.info(
+            f"Inicializado TransactionGenerator para o Banco Nacional {self.bank._id}!")
 
         operating = banks[self.bank._id].operating
 
         i = 0
         while operating:
-            origin = (self.bank._id, self._id)
+            operating = banks[self.bank._id].operating
+            if (i > 10):
+                continue
+            origin = (self.bank._id, randint(0, 10))  # apenas 10 contas
             destination_bank = randint(0, 5)
-            destination = (destination_bank, randint(0, 100))
+            destination = (destination_bank, randint(0, 10))  # 10 contas
             amount = randint(100, 1000000)
-            new_transaction = Transaction(i, origin, destination, amount, currency=Currency(destination_bank+1))
+            new_transaction = Transaction(
+                i, origin, destination, amount, currency=Currency(destination_bank+1))
             banks[self.bank._id].transaction_queue.append(new_transaction)
-            i=+1
+            i += 1
             time.sleep(0.2 * time_unit)
 
-        LOGGER.info(f"O TransactionGenerator {self._id} do banco {self.bank._id} foi finalizado.")
+        # print(self.name, self.is_alive())
+        # for i in self.bank.transaction_queue:
+        #     print(i)
 
+        LOGGER.info(
+            f"O TransactionGenerator {self._id} do banco {self.bank._id} foi finalizado.")

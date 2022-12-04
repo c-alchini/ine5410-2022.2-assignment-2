@@ -1,4 +1,6 @@
-import argparse, time, sys
+import argparse
+import time
+import sys
 from logging import INFO, DEBUG
 from random import randint
 
@@ -13,12 +15,14 @@ from utils.logger import CH, LOGGER
 if __name__ == "__main__":
     # Verificação de compatibilidade da versão do python:
     if sys.version_info < (3, 5):
-        sys.stdout.write('Utilize o Python 3.5 ou mais recente para desenvolver este trabalho.\n')
+        sys.stdout.write(
+            'Utilize o Python 3.5 ou mais recente para desenvolver este trabalho.\n')
         sys.exit(1)
 
     # Captura de argumentos da linha de comando:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--time_unit", "-u", help="Valor da unidade de tempo de simulação")
+    parser.add_argument("--time_unit", "-u",
+                        help="Valor da unidade de tempo de simulação")
     parser.add_argument("--total_time", "-t", help="Tempo total de simulação")
     parser.add_argument("--debug", "-d", help="Printar logs em nível DEBUG")
     args = parser.parse_args()
@@ -38,18 +42,19 @@ if __name__ == "__main__":
         CH.setLevel(INFO)
 
     # Printa argumentos capturados da simulação
-    LOGGER.info(f"Iniciando simulação com os seguintes parâmetros:\n\ttotal_time = {total_time}\n\tdebug = {debug}\n")
+    LOGGER.info(
+        f"Iniciando simulação com os seguintes parâmetros:\n\ttotal_time = {total_time}\n\tdebug = {debug}\n")
     time.sleep(3)
 
     # Inicializa variável `tempo`:
     t = 0
-    
+
     # Cria os Bancos Nacionais e popula a lista global `banks`:
     for i, currency in enumerate(Currency):
-        
+
         # Cria Banco Nacional
         bank = Bank(_id=i, currency=currency)
-        
+
         # Deposita valores aleatórios nas contas internas (reserves) do banco
         bank.reserves.BRL.deposit(randint(100_000_000, 10_000_000_000))
         bank.reserves.CHF.deposit(randint(100_000_000, 10_000_000_000))
@@ -57,18 +62,31 @@ if __name__ == "__main__":
         bank.reserves.GBP.deposit(randint(100_000_000, 10_000_000_000))
         bank.reserves.JPY.deposit(randint(100_000_000, 10_000_000_000))
         bank.reserves.USD.deposit(randint(100_000_000, 10_000_000_000))
-        
+
         # Adiciona banco na lista global de bancos
         banks.append(bank)
 
+    # ALTERAÇÕES CRIS: Criando contas e inicializando bancos
+    for bank in banks:
+        for i in range(10):
+            balance = randint(100, 1000000)
+            overdraft_limit = randint(100, 50000)
+            bank.new_account(balance, overdraft_limit)
+            # print(bank.accounts[i]._id, bank.accounts[i].currency,
+            #       bank.accounts[i].balance, bank.accounts[i].overdraft_limit)
+        bank.open_bank()
+
+    transactionThreads = []
     # Inicializa gerador de transações e processadores de pagamentos para os Bancos Nacionais:
     for i, bank in enumerate(banks):
         # Inicializa um TransactionGenerator thread por banco:
-        TransactionGenerator(_id=i, bank=bank).start()
+        transactionThreads.append(
+            TransactionGenerator(_id=i, bank=bank))  # alterado
+        transactionThreads[i].start()
         # Inicializa um PaymentProcessor thread por banco.
         # Sua solução completa deverá funcionar corretamente com múltiplos PaymentProcessor threads para cada banco.
-        PaymentProcessor(_id=i, bank=bank).start()
-        
+        # PaymentProcessor(_id=i, bank=bank).start()
+
     # Enquanto o tempo total de simuação não for atingido:
     while t < total_time:
         # Aguarda um tempo aleatório antes de criar o próximo cliente:
@@ -80,6 +98,17 @@ if __name__ == "__main__":
 
     # Finaliza todas as threads
     # TODO
+
+    # ALTERAÇÃO CRIS: Fechar os Bancos
+    for bank in banks:
+        bank.close_bank()
+
+    for i in range(len(transactionThreads)):
+        # print(transactionThreads[i].name, transactionThreads[i].is_alive())
+        transactionThreads[i].join()
+
+    # for i in range(len(threads)):
+    #     print(transactionThreads[i].is_alive())
 
     # Termina simulação. Após esse print somente dados devem ser printados no console.
     LOGGER.info(f"A simulação chegou ao fim!\n")
