@@ -33,6 +33,10 @@ class Bank():
         Fila FIFO contendo as transações bancárias pendentes que ainda serão processadas.
     queue_lock : Lock()
         Mutex utilizado para inserção/remoção de elementos da fila de transações
+    queue_sem_prod : Semaphore()
+        Semaforo utilizado pelo transaction_generator para adicionar mais transações na fila
+    queue_sem_cons : Semaphore()
+        Semaforo utilizado pelo payment_processor para retirar transações da fila
 
     Métodos
     -------
@@ -59,7 +63,7 @@ class Bank():
         self.reserves = CurrencyReserves()
         self.operating = False
         self.accounts = []
-        self.transaction_queue = Queue()
+        self.transaction_queue = Queue()  # Alterada lista pela fila
         self.queue_lock = Lock()
         self.queue_sem_prod = Semaphore(queue_max_size)
         self.queue_sem_cons = Semaphore(0)
@@ -68,8 +72,7 @@ class Bank():
         """
         Esse método seta o atributo 'operating' para True
         """
-        print("Abrindo banco", self._id)
-        # print("lock: ", self.queue_lock.locked())
+        print("Abrindo banco", self._id)  # print de teste
         self.operating = True
 
     def close_bank(self) -> None:
@@ -77,7 +80,7 @@ class Bank():
         Esse método seta o atributo 'operating' para False
         """
         self.queue_sem_prod.release(2)
-        print("Encerrando banco", self._id)
+        print("Encerrando banco", self._id)  # print de teste
         self.operating = False
 
     def transaction_queue_put(self, transaction: Transaction) -> None:
@@ -99,7 +102,7 @@ class Bank():
 
     def new_account(self, balance: int = 0, overdraft_limit: int = 0) -> None:
         """
-        Esse método deverá criar uma nova conta bancária (Account) no banco com determinado 
+        Esse método deverá criar uma nova conta bancária (Account) no banco com determinado
         saldo (balance) e limite de cheque especial (overdraft_limit).
         """
         # TODO: IMPLEMENTE AS MODIFICAÇÕES, SE NECESSÁRIAS, NESTE MÉTODO!
@@ -110,6 +113,9 @@ class Bank():
         # Cria instância da classe Account
         acc = Account(_id=acc_id, _bank_id=self._id, currency=self.currency,
                       balance=balance, overdraft_limit=overdraft_limit)
+
+        # LOGGER.info(f"Conta criada no banco {self._id}")
+        # acc.info()
 
         # Adiciona a Account criada na lista de contas do banco
         self.accounts.append(acc)

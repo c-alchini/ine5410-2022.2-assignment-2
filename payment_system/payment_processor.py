@@ -11,8 +11,7 @@ from utils.currency import *
 # TODO
 #  * Retirar o valor das reservas internacionais do banco:
 # talvez criar uma função que verifique qual moeda está sendo utilizada
-# e retira a quantia necessaria das reservas dessa moeda
-# * Adicionar mutex nas accounts e fazer os locks aqui em process_transaction()
+# e retirar a quantia necessaria das reservas dessa moeda
 
 
 class PaymentProcessor(Thread):
@@ -88,18 +87,14 @@ class PaymentProcessor(Thread):
 
         LOGGER.info(
             f"PaymentProcessor {self._id} do Banco {self.bank._id} iniciando processamento da Transaction {transaction._id}!")
+        LOGGER.info(
+            f"Da conta {transaction.origin[1]} do banco {transaction.origin[1]} para a conta {transaction.destination[1]} do banco {transaction.origin[0]}")
 
         # NÃO REMOVA ESSE SLEEP!
         # Ele simula uma latência de processamento para a transação.
         time.sleep(3 * time_unit)
 
         # ALTERAÇÕES \/
-
-        # TODO
-        # Pega mutex origem
-        # Tenta pegar mutex destino
-        #   se o mutex destino estiver ocupado, larga a origem e tenta pegar a origem novamente
-        #   segue quando obtiver os dois mutexes
 
         operating = self.bank.operating
         # Caso o banco feche
@@ -141,7 +136,7 @@ class PaymentProcessor(Thread):
             # taxa de conversão entre as moedas
             transaction.exchange_fee = get_exchange_rate(
                 self.bank.currency, transaction.currency)
-            # valor final na nova moeda que será depositado
+            # valor final na nova moeda
             final_value = value_to_convert * transaction.exchange_fee
 
             # TODO
@@ -150,9 +145,6 @@ class PaymentProcessor(Thread):
 
             # deposita na conta de destino
             destination_acc.deposit(final_value)
-
-        # TODO
-        # libera os dois mutexes
 
         transaction.set_status(TransactionStatus.SUCCESSFUL)
         LOGGER.info(

@@ -66,25 +66,28 @@ if __name__ == "__main__":
         # Adiciona banco na lista global de bancos
         banks.append(bank)
 
-    # ALTERAÇÕES CRIS: Criando contas e inicializando bancos
+    # ALTERAÇÕES: Criando contas e inicializando bancos
     # Os valores aqui são arbitrários, inclusive o número de contas criadas
+    # Não sei se é a ideia do trabalho iniciar as contas aqui. De qualquer modo,
+    # está facilitando a execução
     for bank in banks:
         for i in range(10):
-            balance = randint(10000, 1000000)
-            overdraft_limit = randint(10000, 500000)
+            balance = randint(10000, 100000)
+            overdraft_limit = balance
             bank.new_account(balance, overdraft_limit)
-            # print(bank.accounts[i]._id, bank.accounts[i].currency,
-            #       bank.accounts[i].balance, bank.accounts[i].overdraft_limit)
         bank.open_bank()
 
+    # ALTERAÇÃO: Criação de listas para armazenar as threads
+    # Elas serão posteriormente inicializadas e finalizadas
     transaction_threads = []
     processing_threads = []
+
     # Inicializa gerador de transações e processadores de pagamentos para os Bancos Nacionais:
     for i, bank in enumerate(banks):
-        # Inicializa um TransactionGenerator thread por banco:
+        # Cria um TransactionGenerator thread por banco:
         transaction_threads.append(
             TransactionGenerator(_id=i, bank=bank))  # alterado
-        # Inicializa um PaymentProcessor thread por banco.
+        # Cria um PaymentProcessor thread por banco.
         # Sua solução completa deverá funcionar corretamente com múltiplos PaymentProcessor threads para cada banco.
         processing_threads.append(PaymentProcessor(_id=i, bank=bank))
         processing_threads.append(PaymentProcessor(_id=(i+6), bank=bank))
@@ -96,11 +99,18 @@ if __name__ == "__main__":
     for i in range(len(processing_threads)):
         processing_threads[i].start()
 
+    # As accounts são criadas aqui?
     # Enquanto o tempo total de simuação não for atingido:
     while t < total_time:
         # Aguarda um tempo aleatório antes de criar o próximo cliente:
         dt = randint(0, 3)
         time.sleep(dt * time_unit)
+
+        # Alteração: Criando uma conta nova em cada banco a cada ciclo
+        for bank in banks:
+            balance = randint(10000, 100000)
+            overdraft_limit = balance
+            bank.new_account(balance, overdraft_limit)
 
         # Atualiza a variável tempo considerando o intervalo de criação dos clientes:
         t += dt
@@ -108,7 +118,7 @@ if __name__ == "__main__":
     # Finaliza todas as threads
     # TODO
 
-    # ALTERAÇÃO CRIS: Fechar os Bancos
+    # ALTERAÇÃO: Fechar os Bancos
     for bank in banks:
         bank.close_bank()
 
