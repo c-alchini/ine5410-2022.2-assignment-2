@@ -54,11 +54,11 @@ class TransactionGenerator(Thread):
             if (operating == False):
                 break
             # Cria nova transação e coloca na fila de transações
-            # (0,9) pois esse foi o número de contas criadas
-            origin = (self.bank._id, randint(0, 9))
+            origin = (self.bank._id, randint(0, len(self.bank.accounts) - 1))
             destination_bank = randint(0, 5)
-            destination = (destination_bank, randint(0, 9))
-            amount = randint(100, 1000000)
+            destination = (destination_bank, randint(
+                0, len(self.bank.accounts) - 1))
+            amount = randint(100, 100000)
             new_transaction = Transaction(
                 i, origin, destination, amount, currency=Currency(destination_bank+1))
             banks[self.bank._id].transaction_queue_put(new_transaction)

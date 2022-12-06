@@ -1,10 +1,19 @@
 from dataclasses import dataclass
+from threading import Lock
 
 from utils.currency import Currency
 from utils.logger import LOGGER
 
-# TODO
-# Criar atributo mutex em Account
+# Ideia: Foi adicionado um mutex em cada conta e o mutex é solicitado
+# dentro das operações depositar ou sacar. O ponto é que não está implementado
+# de modo que o payment_processor tenha que ter os mutexes tanto da conta origem
+# como da conta destino antes de realizar as operações entre contas. Se fosse assim, as operações de
+# lock e unlock seriam realizadas pela função do payment_processor.
+
+# Optei por deixar os mutexes aqui nas funções de "deposit" e "withdraw" pois
+# os comentários do trabalho diziam pra adicionar os códigos relativos a concorrência
+# nestas funções. A princípio essa é uma solução que é simples e funciona,
+# mas ainda fico na dúvida se teria que ser feito de modo diferente.
 
 
 @dataclass
@@ -27,6 +36,8 @@ class Account:
         Saldo da conta bancária.
     overdraft_limit : int
         Limite de cheque especial da conta bancária.
+    lock : Lock
+        Mutex de acesso ao atributo 'balance'
 
     Métodos
     -------
@@ -43,12 +54,15 @@ class Account:
     currency: Currency
     balance: int = 0
     overdraft_limit: int = 0
+    lock = Lock()
 
     def info(self) -> None:
         """
         Esse método printa informações gerais sobre a conta bancária.
         """
         # TODO: IMPLEMENTE AS MODIFICAÇÕES, SE NECESSÁRIAS, NESTE MÉTODO!
+        self.balance = int(self.balance)
+        self.overdraft_limit = int(self.overdraft_limit)
 
         pretty_balance = f"{format(round(self.balance/100), ',d')}.{self.balance%100:02d} {self.currency.name}"
         pretty_overdraft_limit = f"{format(round(self.overdraft_limit/100), ',d')}.{self.overdraft_limit%100:02d} {self.currency.name}"
@@ -63,8 +77,10 @@ class Account:
         """
         # TODO: IMPLEMENTE AS MODIFICAÇÕES NECESSÁRIAS NESTE MÉTODO !
 
+        self.lock.acquire()
         self.balance += amount
         LOGGER.info(f"deposit({amount}) successful!")
+        self.lock.release()
         return True
 
     def withdraw(self, amount: int) -> bool:
@@ -76,18 +92,22 @@ class Account:
         """
         # TODO: IMPLEMENTE AS MODIFICAÇÕES NECESSÁRIAS NESTE MÉTODO !
 
+        self.lock.acquire()
         if self.balance >= amount:
             self.balance -= amount
             LOGGER.info(f"withdraw({amount}) successful!")
+            self.lock.release()
             return True
         else:
             overdrafted_amount = abs(self.balance - amount)
             if self.overdraft_limit >= overdrafted_amount:
                 self.balance -= amount
                 LOGGER.info(f"withdraw({amount}) successful with overdraft!")
+                self.lock.release()
                 return True
             else:
                 LOGGER.warning(f"withdraw({amount}) failed, no balance!")
+                self.lock.release()
                 return False
 
 
