@@ -1,13 +1,14 @@
 from typing import Tuple
 from queue import Queue
 from threading import Lock, Semaphore
+from datetime import datetime, timedelta
 
 from payment_system.account import Account, CurrencyReserves
 from utils.transaction import Transaction
 from utils.currency import Currency
 from utils.logger import LOGGER
 
-queue_max_size = 5
+queue_max_size = 50
 
 
 class Bank():
@@ -133,3 +134,21 @@ class Bank():
 
         LOGGER.info(f"Estatísticas do Banco Nacional {self._id}:")
         LOGGER.info(f"...")
+
+    def info_transaction_incompleted(self):
+        len_queue = self.transaction_queue.qsize()
+        # LOGGER.info(
+        #     f"Transações na fila que não foram processadas: {len_queue}")
+        current_time = datetime.now()
+        time_sum = timedelta()
+        while (not self.transaction_queue.empty()):
+            transaction = self.transaction_queue.get()
+            time_waiting = current_time - transaction.created_at
+            time_sum += time_waiting
+        media = 0
+        if (len_queue):
+            media = time_sum/len_queue
+        # else:
+        #     print(f"A fila de transações do banco {self.bank.id} está vazia")
+
+        return (len_queue, media)

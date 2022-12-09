@@ -3,6 +3,8 @@ import time
 import sys
 from logging import INFO, DEBUG
 from random import randint
+from datetime import datetime, timedelta
+
 
 from globals import *
 from payment_system.bank import Bank
@@ -129,8 +131,19 @@ if __name__ == "__main__":
     for i in range(len(processing_threads)):
         processing_threads[i].join()
 
-    # for i in range(len(threads)):
-    #     print(transaction_threads[i].is_alive())
-
     # Termina simulação. Após esse print somente dados devem ser printados no console.
     LOGGER.info(f"A simulação chegou ao fim!\n")
+
+    # Cálculo do número de transações incompletas e da média de tempo
+    # delas na fila de espera
+    trans_incompletas = 0
+    soma_medias = timedelta()
+    for bank in banks:
+        (len_queue, media) = bank.info_transaction_incompleted()
+        trans_incompletas += len_queue
+        soma_medias += media
+
+    LOGGER.info(
+        f"Quantidade total (de todos os bancos) de transações não processadas: {trans_incompletas}")
+    LOGGER.info(
+        f"Média de tempo destas transações na fila de espera até o fechamento do banco: {soma_medias/6}")
