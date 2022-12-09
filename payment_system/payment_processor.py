@@ -168,6 +168,8 @@ class PaymentProcessor(Thread):
         if (transaction.origin[0] == transaction.destination[0]):
             # Transação nacional na mesma moeda
             final_value = transaction.amount - transaction.taxes
+            # --> aqui pode ser incrementado o lucro do banco,
+            # --> transaction.taxes terá o valor zero ou o valor do cheque especial
             destination_acc.deposit(final_value)
         else:
             # Transação internacional
@@ -179,6 +181,9 @@ class PaymentProcessor(Thread):
 
             # soma taxa do cheque especial à taxa de transações internacionais (1%)
             transaction.taxes += transaction.amount * 0.01
+
+            # --> aqui pode ser incrementado o lucro do banco,
+            # --> transaction.taxes terá o valor de todas as taxas somadas (ou zero)
 
             # valor que será convertido (com o desconto das taxas)
             value_to_convert = transaction.amount - transaction.taxes
