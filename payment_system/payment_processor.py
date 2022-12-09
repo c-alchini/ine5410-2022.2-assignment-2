@@ -32,6 +32,10 @@ class PaymentProcessor(Thread):
     -------
     run():
         Inicia thread to PaymentProcessor
+    deposit_bank_reserves(self, amount) -> None:
+        Deposita o valor retirado da conta de origem nas reservas da moeda nacional
+    withdraw_from_international_reserves(self, currency, amount_converted) -> None:
+        Retira o valor convertido das reservas da moeda internacional
     process_transaction(transaction: Transaction) -> TransactionStatus:
         Processa uma transação bancária.
     """
@@ -43,7 +47,7 @@ class PaymentProcessor(Thread):
 
     def run(self):
         """
-        Esse método deve buscar Transactions na fila de transações do banco e processá-las 
+        Esse método deve buscar Transactions na fila de transações do banco e processá-las
         utilizando o método self.process_transaction(self, transaction: Transaction).
         Ele não deve ser finalizado prematuramente (antes do banco realmente fechar).
         """
@@ -75,10 +79,49 @@ class PaymentProcessor(Thread):
         LOGGER.info(
             f"O PaymentProcessor {self._id} do banco {self.bank._id} foi finalizado.")
 
+    # Depositando o valor da transferência nas reservas internas
+    # O depósito é feito na conta da própria moeda nacional
+    def deposit_bank_reserves(self, amount) -> None:
+        if (self.bank.currency == Currency.USD):
+            self.bank.reserves.USD.deposit(amount)
+        elif (self.bank.currency == Currency.EUR):
+            self.bank.reserves.EUR.deposit(amount)
+        elif (self.bank.currency == Currency.GBP):
+            self.bank.reserves.GBP.deposit(amount)
+        elif (self.bank.currency == Currency.JPY):
+            self.bank.reserves.JPY.deposit(amount)
+        elif (self.bank.currency == Currency.CHF):
+            self.bank.reserves.CHF.deposit(amount)
+        elif (self.bank.currency == Currency.BRL):
+            self.bank.reserves.BRL.deposit(amount)
+        # LOGGER.info(
+        #     f"Depositado {amount} nas reservas do banco cuja moeda é {self.bank.currency}")
+
+    # Retirando o valor na nova moeda das reservas internacionais do banco
+    def withdraw_from_international_reserves(self, currency, amount_converted) -> None:
+        if (currency == Currency.USD):
+            self.bank.reserves.USD.withdraw(amount_converted)
+            # print("Dolares retirados:", amount_converted)
+        if (currency == Currency.EUR):
+            self.bank.reserves.EUR.withdraw(amount_converted)
+            # print("Euros retirados", amount_converted)
+        if (currency == Currency.GBP):
+            self.bank.reserves.GBP.withdraw(amount_converted)
+            # print("Euros retirados", amount_converted)
+        if (currency == Currency.JPY):
+            self.bank.reserves.JPY.withdraw(amount_converted)
+            # print("JPY retirados", amount_converted)
+        if (currency == Currency.CHF):
+            self.bank.reserves.CHF.withdraw(amount_converted)
+            # print("CHF retirados", amount_converted)
+        if (currency == Currency.BRL):
+            self.bank.reserves.BRL.withdraw(amount_converted)
+            # print("BRL retirados", amount_converted)
+
     def process_transaction(self, transaction: Transaction) -> TransactionStatus:
         """
         Esse método deverá processar as transações bancárias do banco ao qual foi designado.
-        Caso a transferência seja realizada para um banco diferente (em moeda diferente), a 
+        Caso a transferência seja realizada para um banco diferente (em moeda diferente), a
         lógica para transações internacionais detalhada no enunciado (README.md) deverá ser
         aplicada.
         Ela deve retornar o status da transacão processada.
@@ -128,20 +171,28 @@ class PaymentProcessor(Thread):
             destination_acc.deposit(final_value)
         else:
             # Transação internacional
+
+            # transfere o valor em moeda nacional para a conta de reservas do banco
+            self.deposit_bank_reserves(transaction.amount)
+
+            # a taxa será descontada do valor final convertido em moeda estrangeira
+
             # soma taxa do cheque especial à taxa de transações internacionais (1%)
             transaction.taxes += transaction.amount * 0.01
 
             # valor que será convertido (com o desconto das taxas)
             value_to_convert = transaction.amount - transaction.taxes
+
             # taxa de conversão entre as moedas
             transaction.exchange_fee = get_exchange_rate(
                 self.bank.currency, transaction.currency)
+
             # valor final na nova moeda
             final_value = value_to_convert * transaction.exchange_fee
 
-            # TODO
             # retira o valor das reservas internacionais do banco
-            # talvez criar uma função onde ocorre um withdraw para cada moeda
+            self.withdraw_from_international_reserves(
+                transaction.currency, final_value)
 
             # deposita na conta de destino
             destination_acc.deposit(final_value)
